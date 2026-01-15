@@ -25,7 +25,9 @@ SECRET_KEY = 'django-insecure-g6f*smy_+8zctu7i%8v0owp#*tcf+he44ucr$_m2j5yoe$d48c
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+#ALLOWED_HOSTS = []
+
+ALLOWED_HOSTS = ['odonto-saas.onrender.com', 'localhost', '127.0.0.1']
 
 
 # Application definition
