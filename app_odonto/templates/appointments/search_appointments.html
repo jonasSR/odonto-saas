@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consultas Marcadas - Code Odonto</title>
+    {% load static %}
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            min-height: 100vh;
+            background-color: #f0f2f5;
+        }
+        .sidebar {
+            width: 160px;
+            background-color: #2c3e50;
+            color: white;
+            padding-top: 20px;
+            position: fixed;
+            height: 100%;
+            overflow-y: auto;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+            transition: width 0.3s;
+        }
+        .sidebar h2 {
+            text-align: center;
+            font-size: 26px;
+            margin-bottom: 20px;
+        }
+        .sidebar a {
+            padding: 15px 25px;
+            text-decoration: none;
+            color: white;
+            display: flex;
+            align-items: center;
+            transition: background-color 0.3s, padding-left 0.3s;
+        }
+        .sidebar a:hover {
+            background-color: #34495e;
+            padding-left: 35px;
+        }
+        .sidebar .has-submenu {
+            position: relative;
+        }
+        .sidebar .has-submenu::after {
+            content: '▼';
+            position: absolute;
+            right: 20px;
+            font-size: 14px;
+            transition: transform 0.3s;
+        }
+        .sidebar .submenu {
+            display: none;
+            padding-left: 20px;
+            background-color: #2c3e50;
+            transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+        }
+        .sidebar .submenu a {
+            padding: 12px 25px;
+            color: white;
+        }
+        .sidebar .submenu a:hover {
+            background-color: #34495e;
+        }
+        .sidebar .submenu-visible {
+            display: block;
+            max-height: 500px;
+            opacity: 1;
+        }
+        .sidebar .submenu-visible .has-submenu::after {
+            transform: rotate(180deg);
+        }
+        .content {
+            margin-left: 260px;
+            padding: 30px;
+            flex-grow: 1;
+            background-color: #ecf0f1;
+        }
+        .sidebar .bottom-menu {
+            position: absolute;
+            bottom: 80px;
+            width: 100%;
+        }
+        .header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            border-bottom: 3px solid #3498db;
+        }
+        .header h1 {
+            font-size: 28px;
+            margin: 0;
+        }
+        .form-container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            max-width: 100%;
+            margin: auto;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 5px;
+            transition: background-color 0.3s;
+        }
+        button.cancel {
+            background-color: #e74c3c; /* Cor para o botão de cancelar */
+            color: white;
+        }
+        button.cancel:hover {
+            background-color: #c0392b;
+        }
+        button.remark {
+            background-color: #3498db; /* Cor para o botão de remarcar */
+            color: white;
+        }
+        button.remark:hover {
+            background-color: #2980b9;
+        }
+        button.disabled {
+            background-color: #95a5a6; /* Cor para o botão desativado */
+            cursor: not-allowed;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            padding-top: 60px;
+        }
+        .modal-content {
+            background-color: #fff;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            width: 80%;
+            max-width: 500px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        tr.cancelled {
+            background-color: #f8d7da; /* Cor vermelha clara para cancelada */
+        }
+        tr.rescheduled {
+            background-color: #d1ecf1; /* Cor azul clara para remarcada */
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 200px;
+            }
+            .content {
+                margin-left: 200px;
+            }
+        }
+        @media (max-width: 480px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+            .content {
+                margin-left: 0;
+                width: 100%;
+                padding: 10px;
+            }
+            .form-container {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2><img src="{% static 'logo.png' %}" alt="Logo"> Menu</h2>
+        <a href="{% url 'interface' %}">Principal</a>
+        <a href="{% url 'dashboard' %}">Dashboard</a>
+        <a href="javascript:void(0);" class="has-submenu" onclick="toggleSubmenu(this)">Consultas</a>
+        <div class="submenu">
+            <a href="{% url 'appointments' %}">Consultas</a>
+            <a href="{% url 'search_appointments' %}">Consultas Marcadas</a>
+        </div>
+        <a href="javascript:void(0);" class="has-submenu" onclick="toggleSubmenu(this)">Pacientes</a>
+        <div class="submenu">
+            <a href="{% url 'add_patient' %}">Cadastrar Paciente</a>
+            <a href="{% url 'search_patient' %}">Buscar Paciente</a>
+        </div>
+        <a href="{% url 'treatments' %}">Tratamentos</a>
+        <a href="{% url 'reports' %}">Relatórios</a>
+        <div class="bottom-menu">
+            <a href="{% url 'config' %}">Configurações</a>
+            <a href="{% url 'logout' %}">Sair</a>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="header">
+            <h1>Consultas Marcadas</h1>
+        </div>
+        <div class="form-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Paciente</th>
+                        <th>Data e Hora</th>
+                        <th>Motivo</th>
+                        <th>Número do Protocolo</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for appointment in appointments %}
+                        <tr class="{% if appointment.status == 'cancelled' %}cancelled{% elif appointment.status == 'rescheduled' %}rescheduled{% endif %}">
+                            <td>{{ appointment.patient.name }}</td>
+                            <td>{{ appointment.date }}</td>
+                            <td>{{ appointment.reason }}</td>
+                            <td>{{ appointment.protocol_number }}</td>
+                            <td>
+                                {% if appointment.status != 'cancelled' %}
+                                    <button class="remark" onclick="openRescheduleModal('{{ appointment.id }}', '{{ appointment.patient.name }}', '{{ appointment.date }}')">Remarcar</button>
+                                {% else %}
+                                    <button class="remark disabled" disabled>Remarcar</button>
+                                {% endif %}
+                                {% if appointment.status != 'cancelled' %}
+                                    <button class="cancel" onclick="openCancelModal('{{ appointment.id }}', '{{ appointment.patient.name }}')">Cancelar</button>
+                                {% else %}
+                                    <button class="cancel disabled" disabled>Cancelar</button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal para Remarcar -->
+    <div id="rescheduleModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('rescheduleModal')">&times;</span>
+            <h2>Remarcar Consulta</h2>
+            <form id="rescheduleForm" method="post" action="{% url 'reschedule_appointment' %}">
+                {% csrf_token %}
+                <input type="hidden" id="rescheduleAppointmentId" name="appointmentId">
+                <p>Paciente: <span id="reschedulePatientName"></span></p>
+                <p>Data e Hora Original: <span id="rescheduleOriginalDate"></span></p>
+                <label for="newDate">Nova Data e Hora:</label>
+                <input type="datetime-local" id="newDate" name="newDate" required>
+                <br>
+                <label for="rescheduleReason">Razão da Remarcação:</label>
+                <textarea id="rescheduleReason" name="reason" rows="4" required></textarea>
+                <br>
+                <button type="submit" class="remark">Remarcar</button>
+                <button type="button" onclick="closeModal('rescheduleModal')">Fechar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Cancelar -->
+    <div id="cancelModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('cancelModal')">&times;</span>
+            <h2>Cancelar Consulta</h2>
+            <form id="cancelForm" method="post" action="{% url 'cancel_appointment' %}">
+                {% csrf_token %}
+                <input type="hidden" id="cancelAppointmentId" name="appointmentId">
+                <p>Paciente: <span id="cancelPatientName"></span></p>
+                <label for="cancelReason">Motivo do Cancelamento:</label>
+                <textarea id="cancelReason" name="reason" rows="4" required></textarea>
+                <br>
+                <button type="submit" class="cancel">Cancelar</button>
+                <button type="button" onclick="closeModal('cancelModal')">Fechar</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function toggleSubmenu(element) {
+            var submenu = element.nextElementSibling;
+            var isVisible = submenu.classList.contains('submenu-visible');
+            
+            // Fechar todos os submenus
+            document.querySelectorAll('.submenu').forEach(function(sub) {
+                sub.classList.remove('submenu-visible');
+                sub.style.maxHeight = '0';
+                sub.style.opacity = '0';
+            });
+            document.querySelectorAll('.has-submenu').forEach(function(menu) {
+                menu.classList.remove('submenu-visible');
+            });
+            
+            // Abrir o submenu clicado, se estava fechado
+            if (!isVisible) {
+                submenu.classList.add('submenu-visible');
+                submenu.style.maxHeight = submenu.scrollHeight + 'px';
+                submenu.style.opacity = '1';
+                element.classList.add('submenu-visible');
+            }
+        }
+
+        function openRescheduleModal(appointmentId, patientName, originalDate) {
+            document.getElementById('rescheduleModal').style.display = 'block';
+            document.getElementById('rescheduleAppointmentId').value = appointmentId;
+            document.getElementById('reschedulePatientName').innerText = patientName;
+            document.getElementById('rescheduleOriginalDate').innerText = originalDate;
+        }
+
+        function openCancelModal(appointmentId, patientName) {
+            document.getElementById('cancelModal').style.display = 'block';
+            document.getElementById('cancelAppointmentId').value = appointmentId;
+            document.getElementById('cancelPatientName').innerText = patientName;
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Fechar o modal se clicar fora dele
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

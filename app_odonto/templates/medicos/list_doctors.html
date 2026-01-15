@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Listar Médicos - Code Odonto</title>
+    {% load static %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            background-color: #f8f8f8;
+            overflow: hidden;
+        }
+        .sidebar {
+            width: 160px;
+            background-color: #2c3e50;
+            color: white;
+            padding-top: 20px;
+            position: fixed;
+            height: 100%;
+            overflow: auto;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+            transition: width 0.3s;
+        }
+
+        .sidebar h2 {
+            text-align: center;
+            font-size: 26px;
+            margin-bottom: 20px;
+        }
+        .sidebar a {
+            padding: 15px 25px;
+            text-decoration: none;
+            color: white;
+            display: flex;
+            align-items: center;
+            transition: background-color 0.3s, padding-left 0.3s;
+        }
+        .sidebar a:hover {
+            background-color: #34495e;
+            padding-left: 35px;
+        }
+        .sidebar .has-submenu::after {
+            content: '▼';
+            position: absolute;
+            right: 20px;
+            font-size: 14px;
+            transition: transform 0.3s;
+        }
+        .sidebar .submenu {
+            display: none;
+            padding-left: 20px;
+            background-color: #2c3e50;
+            transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+        }
+        .sidebar .submenu a {
+            padding: 12px 25px;
+        }
+        .sidebar .submenu-visible {
+            display: block;
+            max-height: 500px;
+            opacity: 1;
+        }
+        .sidebar .submenu-visible .has-submenu::after {
+            transform: rotate(180deg);
+        }
+        .content {
+            margin-left: 260px;
+            padding: 30px;
+            flex-grow: 1;
+            background-color: #ecf0f1;
+            overflow-y: auto;
+        }
+        .header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            border-bottom: 3px solid #3498db;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .header img {
+            max-height: 40px;
+            margin-right: 10px;
+        }
+        .header h1 {
+            font-size: 28px;
+        }
+        .welcome {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .sidebar .bottom-menu {
+            position: absolute;
+            bottom: 80px;
+            width: 100%;
+        }
+        .section {
+            margin-bottom: 20px;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        .section h2 {
+            margin-bottom: 15px;
+            font-size: 22px;
+            color: #2c3e50;
+        }
+        .doctor-card-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: space-between;
+        }
+        .doctor-card {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            flex: 1 1 calc(33.333% - 20px);
+            max-width: calc(33.333% - 20px);
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.3s;
+        }
+        .doctor-card.active {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+        .doctor-card.inactive {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+        .doctor-card h3 {
+            margin-top: 0;
+            font-size: 20px;
+            color: #2c3e50;
+        }
+        .doctor-card p {
+            margin: 5px 0;
+            color: #555;
+        }
+        .doctor-card .actions {
+            margin-top: 10px;
+        }
+        .doctor-card .actions button,
+        .doctor-card .actions a.edit {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+            font-size: 16px;
+            text-decoration: none;
+            display: inline-block;
+            margin-right: 10px;
+            text-align: center;
+        }
+        .doctor-card .actions button:hover,
+        .doctor-card .actions a.edit:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+        .doctor-card .actions button:active,
+        .doctor-card .actions a.edit:active {
+            background-color: #004494;
+            transform: translateY(0);
+        }
+        .doctor-card .actions a.edit {
+            background-color: #28a745;
+        }
+        .doctor-card .actions a.edit:hover {
+            background-color: #218838;
+        }
+        .doctor-card .actions a.edit:active {
+            background-color: #1e7e34;
+        }
+        .doctor-card .gender-icon {
+            font-size: 24px;
+            margin-right: 5px;
+        }
+        @media (max-width: 1024px) {
+            .doctor-card {
+                flex: 1 1 calc(50% - 20px);
+                max-width: calc(50% - 20px);
+            }
+        }
+        @media (max-width: 768px) {
+            .doctor-card {
+                flex: 1 1 100%;
+                max-width: 100%;
+            }
+        }
+        /* Estilos da Modal */
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1; 
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5); 
+            padding-top: 60px;
+        }
+
+        .modal-content {
+            background-color: #fff;
+            margin: 5% auto; 
+            padding: 20px;
+            border-radius: 8px;
+            width: 80%; 
+            max-width: 500px; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            text-align: center;
+            position: relative;
+        }
+
+        .modal-content h2 {
+            margin-top: 0;
+            font-size: 24px;
+            color: #2c3e50;
+        }
+
+        .modal-content p {
+            font-size: 16px;
+            color: #555;
+        }
+
+        .modal-content input,
+        .modal-content textarea,
+        .modal-content select {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        .modal-content button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        .modal-content button:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        .modal-content button:active {
+            background-color: #004494;
+            transform: translateY(0);
+        }
+
+        .modal .close {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 28px;
+            font-weight: bold;
+            color: #aaa;
+            cursor: pointer;
+        }
+
+        .modal .close:hover {
+            color: black;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2><img src="{% static 'logo.png' %}" alt="Logo"> Menu</h2>
+        <a href="{% url 'interface' %}">Principal</a>
+        <a href="{% url 'dashboard' %}">Dashboard</a>
+        <a href="javascript:void(0);" class="has-submenu" onclick="toggleSubmenu('appointments')">Consultas</a>
+        <div class="submenu" id="appointments-submenu">
+            <a href="{% url 'appointments' %}">Consultas</a>
+            <a href="{% url 'search_appointments' %}">Buscar Consultas</a>
+        </div>
+        <a href="javascript:void(0);" class="has-submenu" onclick="toggleSubmenu('patients')">Pacientes</a>
+        <div class="submenu" id="patients-submenu">
+            <a href="{% url 'add_patient' %}">Cadastrar Paciente</a>
+            <a href="{% url 'search_patient' %}">Buscar Paciente</a>
+        </div>
+        <a href="javascript:void(0);" class="has-submenu" onclick="toggleSubmenu('doctors')">Médicos</a>
+        <div class="submenu" id="doctors-submenu">
+            <a href="{% url 'add_doctor' %}">Cadastrar Médico</a>
+            <a href="{% url 'list_doctors' %}">Buscar Médico</a>
+        </div>
+        <div class="bottom-menu">
+            <a href="{% url 'logout' %}">Sair</a>
+        </div>
+    </div>
+    <div class="content">
+        <div class="header">
+            <img src="{% static 'logo.png' %}" alt="Logo">
+            <h1>Bem-vindo(a) {{ user.first_name }}</h1>
+        </div>
+        <div class="section">
+            <h2>Lista de Médicos</h2>
+            <div class="doctor-card-container">
+                {% if doctors %}
+                    {% for doctor in doctors %}
+                        <div class="doctor-card {% if doctor.ativo %}active{% else %}inactive{% endif %}" data-id="{{ doctor.id }}" data-ativo="{{ doctor.ativo|yesno:"true,false" }}">
+                            <div>
+                                {% if doctor.genero == 'M' %}
+                                    <i class="fas fa-male gender-icon" title="Masculino"></i> Masculino
+                                {% elif doctor.genero == 'F' %}
+                                    <i class="fas fa-female gender-icon" title="Feminino"></i> Feminino
+                                {% else %}
+                                    <i class="fas fa-genderless gender-icon" title="Outro"></i> Outro
+                                {% endif %}
+                                <strong>{{ doctor.nome }}</strong>
+                            </div>
+                            <p><i class="fas fa-stethoscope gender-icon"></i> {{ doctor.especialidade }}</p>
+                            <p><i class="fas fa-envelope gender-icon"></i> {{ doctor.email }}</p>
+                            <p><i class="fas fa-phone gender-icon"></i> {{ doctor.contato }}</p>
+                            <p><i class="fas fa-map-marker-alt gender-icon"></i> {{ doctor.endereco }}</p>
+                            <p><i class="fas fa-venus-mars gender-icon"></i> 
+                                {% if doctor.genero == 'M' %}
+                                    Masculino
+                                {% elif doctor.genero == 'F' %}
+                                    Feminino
+                                {% else %}
+                                    Outro
+                                {% endif %}
+                            </p>
+                            <div class="actions">
+                                <button onclick="toggleStatus(this)">
+                                    {% if doctor.ativo %}
+                                        Desativar
+                                    {% else %}
+                                        Ativar
+                                    {% endif %}
+                                </button>
+                                <a href="javascript:void(0);" class="edit" onclick="openModal('{{ doctor.id|escapejs }}', '{{ doctor.nome|escapejs }}', '{{ doctor.especialidade|escapejs }}', '{{ doctor.email|escapejs }}', '{{ doctor.contato|escapejs }}', '{{ doctor.endereco|escapejs }}', '{{ doctor.genero|escapejs }}')">Editar</a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p>Nenhum médico encontrado.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Modal de Atualização de Status -->
+        <div id="status-modal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeStatusModal()">&times;</span>
+                <h2>Status Atualizado</h2>
+                <p>O status do médico foi atualizado com sucesso.</p>
+                <button onclick="closeStatusModal()">Fechar</button>
+            </div>
+        </div>
+
+        <!-- Modal de Edição -->
+        <div id="editModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal()">&times;</span>
+                <h2>Editar Médico</h2>
+                <form id="edit-doctor-form" method="POST" action="">
+                    {% csrf_token %}
+                    <input type="hidden" id="doctor-id" name="id">
+                    <label for="doctor-name">Nome:</label>
+                    <input type="text" id="doctor-name" name="name" required>
+                    
+                    <label for="doctor-specialty">Especialidade:</label>
+                    <input type="text" id="doctor-specialty" name="specialty" required>
+                    
+                    <label for="doctor-email">Email:</label>
+                    <input type="email" id="doctor-email" name="email" required>
+                    
+                    <label for="doctor-contact">Contato:</label>
+                    <input type="text" id="doctor-contact" name="contact" required>
+                    
+                    <label for="doctor-address">Endereço:</label>
+                    <textarea id="doctor-address" name="address" required></textarea>
+                    
+                    <label for="doctor-gender">Gênero:</label>
+                    <select id="doctor-gender" name="gender" required>
+                        <option value="M">Masculino</option>
+                        <option value="F">Feminino</option>
+                        <option value="O">Outro</option>
+                    </select>
+                    
+                    <button type="submit">Salvar</button>
+                </form>
+            </div>
+        </div>
+
+    <script>
+        function toggleStatus(button) {
+            var doctorCard = button.closest('.doctor-card');
+            var doctorId = doctorCard.getAttribute('data-id');
+            var currentStatus = doctorCard.getAttribute('data-ativo') === 'true';
+            var newStatus = !currentStatus;
+
+            console.log('Toggling status for doctor ID:', doctorId);
+            console.log('Current status:', currentStatus);
+            console.log('New status:', newStatus);
+
+            doctorCard.classList.toggle('active', newStatus);
+            doctorCard.classList.toggle('inactive', !newStatus);
+            doctorCard.setAttribute('data-ativo', newStatus ? 'true' : 'false');
+
+            button.textContent = newStatus ? 'Desativar' : 'Ativar';
+
+            fetch(`/update_doctor_status/${doctorId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: `ativo=${newStatus}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Update status response:', data);
+                if (data.success) {
+                    showStatusModal();
+                } else {
+                    console.error('Erro ao atualizar o status:', data.error);
+                }
+            })
+            .catch(error => console.error('Erro:', error));
+        }
+
+        function showStatusModal() {
+            var modal = document.getElementById('status-modal');
+            console.log('Showing status modal');
+            modal.style.display = 'block';
+        }
+
+        function closeStatusModal() {
+            console.log('Closing status modal');
+            document.getElementById('status-modal').style.display = 'none';
+        }
+
+        function openModal(id, name, specialty, email, contact, address, gender) {
+            console.log('Opening edit modal with ID:', id);
+            document.getElementById('doctor-id').value = id;
+            document.getElementById('doctor-name').value = name;
+            document.getElementById('doctor-specialty').value = specialty;
+            document.getElementById('doctor-email').value = email;
+            document.getElementById('doctor-contact').value = contact;
+            document.getElementById('doctor-address').value = address;
+            document.getElementById('doctor-gender').value = gender;
+
+            // Update the form action URL
+            var form = document.getElementById('edit-doctor-form');
+            form.action = `/edit-doctor/${id}/`;
+
+            document.getElementById('editModal').style.display = 'block';
+        }
+
+
+        function closeModal() {
+            console.log('Closing edit modal');
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('editModal')) {
+                closeModal();
+            }
+        }
+    </script>
+</body>
+</html>

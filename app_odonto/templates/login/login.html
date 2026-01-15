@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Code Odonto</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .login-container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+        .login-container h1 {
+            margin-bottom: 15px;
+            font-size: 28px;
+            color: #333;
+        }
+        .login-container h2 {
+            margin-bottom: 20px;
+            font-size: 18px;
+            color: #666;
+        }
+        .login-container label {
+            display: block;
+            margin-bottom: 5px;
+            text-align: left;
+            color: #333;
+        }
+        .login-container input {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .login-container input[type="checkbox"] {
+            width: auto;
+            margin-right: 10px;
+        }
+        .login-container .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            justify-content: flex-start;
+        }
+        .login-container .checkbox-group label {
+            font-size: 14px;
+            color: #333;
+            vertical-align: middle;
+        }
+        .login-container button {
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .login-container button:hover {
+            background-color: #45a049;
+        }
+        .register-container {
+            margin-top: 20px;
+        }
+        .register-container button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007BFF;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .register-container button:hover {
+            background-color: #0056b3;
+        }
+        .error-message {
+            color: red;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h1>Code Odonto</h1>
+        <h2>Login</h2>
+        {% if error %}
+            <p class="error-message">{{ error }}</p>
+        {% endif %}
+        <form action="{% url 'login' %}" method="post">
+            {% csrf_token %}
+            <label for="username">Nome de Usuário</label>
+            <input type="text" id="username" name="username" required>
+
+            <label for="password">Senha</label>
+            <input type="password" id="password" name="password" required>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="show_password" onclick="togglePassword()">
+                <label for="show_password">Mostrar Senha</label>
+            </div>
+
+            <button type="submit">Entrar</button>
+        </form>
+        <div class="register-container">
+            <form action="{% url 'register' %}" method="get">
+                <button type="submit">Registrar</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const showPasswordCheckbox = document.getElementById('show_password');
+            passwordInput.type = showPasswordCheckbox.checked ? 'text' : 'password';
+        }
+    </script>
+</body>
+</html>
